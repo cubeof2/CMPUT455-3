@@ -29,20 +29,21 @@ from board import GoBoard
 from board_util import GoBoardUtil
 from engine import GoEngine
 
+
 class GtpConnection:
-    def __init__(self, go_engine: GoEngine, board: GoBoard, debug_mode: bool = False) -> None:
+    def __init__(self, goEngine: GoEngine, board: GoBoard, debug_mode: bool = False) -> None:
         """
         Manage a GTP connection for a Go-playing engine
 
         Parameters
         ----------
-        go_engine:
-            a program that can reply to a set of GTP commandsbelow
+        goEngine:
+            a program that can reply to a set of GTP commands below
         board: 
             Represents the current board state.
         """
         self._debug_mode: bool = debug_mode
-        self.go_engine = go_engine
+        self.ninuki_engine = goEngine
         self.board: GoBoard = board
         self.commands: Dict[str, Callable[[List[str]], None]] = {
             "protocol_version": self.protocol_version_cmd,
@@ -67,7 +68,8 @@ class GtpConnection:
             "gogui-rules_board": self.gogui_rules_board_cmd,
             "gogui-analyze_commands": self.gogui_analyze_cmd,
             "timelimit": self.timelimit_cmd,
-            "solve": self.solve_cmd
+            "solve": self.solve_cmd,
+            "policytype": self.policytype_cmd
         }
 
         # argmap is used for argument checking
@@ -175,11 +177,11 @@ class GtpConnection:
 
     def name_cmd(self, args: List[str]) -> None:
         """ Return the name of the Go engine """
-        self.respond(self.go_engine.name)
+        self.respond(self.ninuki_engine.name)
 
     def version_cmd(self, args: List[str]) -> None:
         """ Return the version of the  Go engine """
-        self.respond(str(self.go_engine.version))
+        self.respond(str(self.ninuki_engine.version))
 
     def clear_board_cmd(self, args: List[str]) -> None:
         """ clear the board """
@@ -200,7 +202,7 @@ class GtpConnection:
         """
         Set the engine's komi to args[0]
         """
-        self.go_engine.komi = float(args[0])
+        self.ninuki_engine.komi = float(args[0])
         self.respond()
 
     def known_command_cmd(self, args: List[str]) -> None:
@@ -363,31 +365,50 @@ class GtpConnection:
         """
         board_color = args[0].lower()
         color = color_to_int(board_color)
-        result1 = self.board.detect_five_in_a_row()
-        result2 = EMPTY
-        if self.board.get_captures(opponent(color)) >= 10:
-            result2 = opponent(color)
-        if result1 == opponent(color) or result2 == opponent(color):
-            self.respond("resign")
-            return
-        legal_moves = self.board.get_empty_points()
-        if legal_moves.size == 0:
-            self.respond("pass")
-            return
-        rng = np.random.default_rng()
-        choice = rng.choice(len(legal_moves))
-        move = legal_moves[choice]
+
+        # ----- Old stuff here ------
+        # result1 = self.board.detect_five_in_a_row()
+        # result2 = EMPTY
+        # if self.board.get_captures(opponent(color)) >= 10:
+        #     result2 = opponent(color)
+        # if result1 == opponent(color) or result2 == opponent(color):
+        #     self.respond("resign")
+        #     return
+        # legal_moves = self.board.get_empty_points()
+        # if legal_moves.size == 0:
+        #     self.respond("pass")
+        #     return
+        # rng = np.random.default_rng()
+        # choice = rng.choice(len(legal_moves))
+        # move = legal_moves[choice]
+        # ----- Old stuff ends here ------
+
+        # check for end of game here (better yet, link to a function that does that)
+        # otherwise query the engine for a move
+
+        move = self.ninuki_engine.get_move(self.board, color)
         move_coord = point_to_coord(move, self.board.size)
         move_as_string = format_point(move_coord)
         self.play_cmd([board_color, move_as_string, 'print_move'])
+        # I think the line above means we do not need the "respond" line here, but check it
     
     def timelimit_cmd(self, args: List[str]) -> None:
-        """ Implement this function for Assignment 2 """
+        """ Leftover artifact from Assignment 2
+        per: https://eclass.srv.ualberta.ca/mod/forum/discuss.php?d=2360880#p6089724
+        we do not need to implement this function
+        """
         pass
 
     def solve_cmd(self, args: List[str]) -> None:
-        """ Implement this function for Assignment 2 """
+        """ Leftover artifact from Assignment 2
+        per: https://eclass.srv.ualberta.ca/mod/forum/discuss.php?d=2360880#p6089724
+        we do not need to implement this function
+        """
         pass
+
+    def policytype_cmd(self, args: List[str]) -> None:
+        """ Sets the engine's policy type, either "random" or "rule_based" """
+        self.ninuki_engine.set_policy(args[0])
 
     """
     ==========================================================================
