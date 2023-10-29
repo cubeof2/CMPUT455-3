@@ -409,7 +409,6 @@ class GtpConnection:
     def policytype_cmd(self, args: List[str]) -> None:
         """ Sets the engine's policy type, either "random" or "rule_based" """
         self.ninuki_engine.set_policy(args[0])
-        self.respond()
 
     """
     ==========================================================================
