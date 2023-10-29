@@ -11,12 +11,15 @@ class GoEngine:
         """
         self.name: str = name
         self.version: float = version
-        self.komi: float = DEFAULT_KOMI
+        self._policy_type: str = "random"
 
     def get_move(self, board: GoBoard, color: int) -> GO_POINT:
         """
         name : name of the player used by the GTP interface
         version : version number used by the GTP interface
         """
+        pass
+
+    def set_policy(self, policy_type: str) -> None:
         pass
         

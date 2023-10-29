@@ -29,7 +29,7 @@ from board_base import (
     NO_POINT,
     PASS,
     GO_COLOR,
-    GO_POINT,
+    GO_POINT
 )
 
 
@@ -58,6 +58,7 @@ class GoBoard(object):
             self.black_captures += 2
         elif color == WHITE:
             self.white_captures += 2
+
     def get_captures(self, color: GO_COLOR) -> None:
         if color == BLACK:
             return self.black_captures
@@ -193,10 +194,22 @@ class GoBoard(object):
         can_play_move = board_copy.play_move(point, color)
         return can_play_move
 
-    def end_of_game(self) -> bool:
-        return self.last_move == PASS \
-           and self.last2_move == PASS
-           
+    def end_of_game(self) -> int:
+        """ check if the game is over AFTER a move has been made
+        3 conditions:
+        - 2 consecutive passes
+        - 5 in a row
+        - any player has captured >= 10 stones
+        """
+        if self.last_move == PASS \
+           and self.last2_move == PASS:
+            return -1
+        if self.detect_five_in_a_row() != EMPTY:
+            return opponent(self.current_player)
+        if self.black_captures >= 10 or self.white_captures >= 10:
+            return opponent(self.current_player)
+        return False
+
     def get_empty_points(self) -> np.ndarray:
         """
         Return:
@@ -315,10 +328,11 @@ class GoBoard(object):
         self.current_player = opponent(color)
         self.last2_move = self.last_move
         self.last_move = point
-        O = opponent(color)
+        opp_color = opponent(color)
         offsets = [1, -1, self.NS, -self.NS, self.NS+1, -(self.NS+1), self.NS-1, -self.NS+1]
         for offset in offsets:
-            if self.board[point+offset] == O and self.board[point+(offset*2)] == O and self.board[point+(offset*3)] == color:
+            if (self.board[point+offset] == opp_color and self.board[point+(offset*2)] == opp_color
+                    and self.board[point+(offset*3)] == color):
                 self.board[point+offset] = EMPTY
                 self.board[point+(offset*2)] = EMPTY
                 if color == BLACK:
