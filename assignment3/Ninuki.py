@@ -99,6 +99,13 @@ class Ninuki(GoEngine):
     def _rule_based(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
         """
         Returns a move for a rule-based ninuki player
+        Rules in order of priority:
+            1. Direct win. 5 in a row or 10 captures
+            2. Block opponent's direct win
+            3. Create an open four
+            4. Capture opponent's 2 or more stones
+            5. Random move
+        TODO: aho corasick for pattern recognition, as we are checking for more patterns compared to last assignment.
         """
         pass
 
