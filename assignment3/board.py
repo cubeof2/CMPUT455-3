@@ -13,6 +13,7 @@ The board uses a 1-dimensional representation with padding
 
 import numpy as np
 from typing import List, Tuple
+from collections import deque
 
 from board_base import (
     board_array_size,
@@ -42,6 +43,112 @@ For many more utility functions, see the GoBoardUtil class in board_util.py.
 The board is stored as a one-dimensional array of GO_POINT in self.board.
 See coord_to_point for explanations of the array encoding.
 """
+
+
+class AhoCorasickNode:
+    def __init__(self):
+        self.children = {}
+        self.fail = None
+        self.output = []
+
+
+def build_ac_trie(patterns):
+    root = AhoCorasickNode()
+
+    for pattern in patterns:
+        node = root
+        for num in pattern:
+            if num not in node.children:
+                node.children[num] = AhoCorasickNode()
+            node = node.children[num]
+        node.output.append(pattern)
+
+    queue = deque()
+    for child in root.children.values():
+        queue.append(child)
+        child.fail = root
+
+    while queue:
+        current_node = queue.popleft()
+        for num, child in current_node.children.items():
+            queue.append(child)
+            fail_node = current_node.fail
+            while fail_node and num not in fail_node.children:
+                fail_node = fail_node.fail
+            if fail_node:
+                child.fail = fail_node.children.get(num, root)
+            else:
+                child.fail = root
+            child.output.extend(child.fail.output)
+
+    return root
+
+
+def aho_corasick_search(text_array, ac_trie, patterns):
+    current_node = ac_trie
+    i = 0
+
+    for num in text_array:
+        while num not in current_node.children and current_node.fail:
+            current_node = current_node.fail
+        if num in current_node.children:
+            current_node = current_node.children[num]
+        for j in current_node.output:
+            pattern_index = patterns.index(j)
+            start_pos = i - len(j) + 1
+            return pattern_index, start_pos
+
+        i += 1
+
+    return -1, -1
+
+
+# Define patterns and the offsets in order to retrieve the empty square later on.
+WHITE_THREATS_NO_CAPTURE = [[WHITE, WHITE, WHITE, WHITE, EMPTY], [WHITE, WHITE, WHITE, EMPTY, WHITE],
+                            [WHITE, WHITE, EMPTY, WHITE, WHITE], [WHITE, EMPTY, WHITE, WHITE, WHITE],
+                            [EMPTY, WHITE, WHITE, WHITE, WHITE]]
+WHITE_THREATS_NO_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0]]
+
+BLACK_THREATS_NO_CAPTURE = [[BLACK, BLACK, BLACK, BLACK, EMPTY], [BLACK, BLACK, BLACK, EMPTY, BLACK],
+                            [BLACK, BLACK, EMPTY, BLACK, BLACK], [BLACK, EMPTY, BLACK, BLACK, BLACK],
+                            [EMPTY, BLACK, BLACK, BLACK, BLACK]]
+BLACK_THREATS_NO_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0]]
+
+WHITE_THREATS_WITH_CAPTURE = [[WHITE, WHITE, WHITE, WHITE, EMPTY], [WHITE, WHITE, WHITE, EMPTY, WHITE],
+                              [WHITE, WHITE, EMPTY, WHITE, WHITE], [WHITE, EMPTY, WHITE, WHITE, WHITE],
+                              [EMPTY, WHITE, WHITE, WHITE, WHITE], [WHITE, BLACK, BLACK, EMPTY],
+                              [EMPTY, BLACK, BLACK, WHITE]]
+WHITE_THREATS_WITH_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0], [3], [0]]
+
+BLACK_THREATS_WITH_CAPTURE = [[BLACK, BLACK, BLACK, BLACK, EMPTY], [BLACK, BLACK, BLACK, EMPTY, BLACK],
+                              [BLACK, BLACK, EMPTY, BLACK, BLACK], [BLACK, EMPTY, BLACK, BLACK, BLACK],
+                              [EMPTY, BLACK, BLACK, BLACK, BLACK], [BLACK, WHITE, WHITE, EMPTY],
+                              [EMPTY, WHITE, WHITE, BLACK]]
+BLACK_THREATS_WITH_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0], [3], [0]]
+
+WHITE_HEURISTIC_TO_CREATE_THREATS = [[EMPTY, WHITE, WHITE, WHITE, EMPTY, EMPTY],
+                                     [EMPTY, WHITE, WHITE, EMPTY, WHITE, EMPTY],
+                                     [EMPTY, WHITE, EMPTY, WHITE, WHITE, EMPTY],
+                                     [EMPTY, EMPTY, WHITE, WHITE, WHITE, EMPTY]]
+WHITE_HEURISTIC_EMPTY_OFFSET = [[4], [3], [2], [1]]
+
+BLACK_HEURISTIC_TO_CREATE_THREATS = [[EMPTY, BLACK, BLACK, BLACK, EMPTY, EMPTY],
+                                     [EMPTY, BLACK, BLACK, EMPTY, BLACK, EMPTY],
+                                     [EMPTY, BLACK, EMPTY, BLACK, BLACK, EMPTY],
+                                     [EMPTY, EMPTY, BLACK, BLACK, BLACK, EMPTY]]
+BLACK_HEURISTIC_EMPTY_OFFSET = [[4], [3], [2], [1]]
+
+# Build the Aho-Corasick Trie only once
+ac_trie_white_no_capture = build_ac_trie(WHITE_THREATS_NO_CAPTURE)
+ac_trie_black_no_capture = build_ac_trie(BLACK_THREATS_NO_CAPTURE)
+
+ac_trie_white_with_capture = build_ac_trie(WHITE_THREATS_WITH_CAPTURE)
+ac_trie_black_with_capture = build_ac_trie(BLACK_THREATS_WITH_CAPTURE)
+
+ac_trie_white_heuristic = build_ac_trie(WHITE_HEURISTIC_TO_CREATE_THREATS)
+ac_trie_black_heuristic = build_ac_trie(BLACK_HEURISTIC_TO_CREATE_THREATS)
+
+
 class GoBoard(object):
     def __init__(self, size: int) -> None:
         """
@@ -407,3 +514,4 @@ class GoBoard(object):
             if counter == 5 and prev != EMPTY:
                 return prev
         return EMPTY
+
