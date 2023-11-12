@@ -69,7 +69,8 @@ class GtpConnection:
             "gogui-analyze_commands": self.gogui_analyze_cmd,
             "timelimit": self.timelimit_cmd,
             "solve": self.solve_cmd,
-            "policytype": self.policytype_cmd
+            "policy": self.policytype_cmd,
+            "policy_moves": self.policy_moves_cmd
         }
 
         # argmap is used for argument checking
@@ -409,6 +410,9 @@ class GtpConnection:
     def policytype_cmd(self, args: List[str]) -> None:
         """ Sets the engine's policy type, either "random" or "rule_based" """
         self.ninuki_engine.set_policy(args[0])
+
+    def policy_moves_cmd(self, args: List[str]) -> None:
+        pass
 
     """
     ==========================================================================

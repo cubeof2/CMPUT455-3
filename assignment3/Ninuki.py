@@ -107,7 +107,20 @@ class Ninuki(GoEngine):
             5. Random move
         TODO: aho corasick for pattern recognition, as we are checking for more patterns compared to last assignment.
         """
+
         pass
+
+
+    def generate_policy_moves(self, board: GoBoard, colour: GO_COLOR) -> list[GO_POINT]:
+        """
+        Generate a list of moves based on the policy type
+        """
+        if self.get_policy() == "random":
+            return "Random", GoBoardUtil.generate_legal_moves(board, colour)
+
+        elif self.get_policy() == "rule_based":
+            pass
+
 
 
 def run() -> None:

@@ -155,7 +155,7 @@ class GoBoard(object):
         self.calculate_rows_cols_diags()
         self.black_captures = 0
         self.white_captures = 0
-
+        self.stack = []
     def add_two_captures(self, color: GO_COLOR) -> None:
         if color == BLACK:
             self.black_captures += 2
@@ -433,16 +433,42 @@ class GoBoard(object):
         self.last_move = point
         opp_color = opponent(color)
         offsets = [1, -1, self.NS, -self.NS, self.NS+1, -(self.NS+1), self.NS-1, -self.NS+1]
+
+        captured = []
         for offset in offsets:
             if (self.board[point+offset] == opp_color and self.board[point+(offset*2)] == opp_color
                     and self.board[point+(offset*3)] == color):
                 self.board[point+offset] = EMPTY
                 self.board[point+(offset*2)] = EMPTY
+
+                captured.append(point+offset)
+                captured.append(point+(offset*2))
                 if color == BLACK:
                     self.black_captures += 2
                 else:
                     self.white_captures += 2
+
+        self.stack.append((point, color, captured))
         return True
+
+    def undo_last_move(self):
+        last_move = self.stack.pop(-1)
+        point = last_move[0]
+        colour = last_move[1]
+        captured = last_move[2]
+        self.current_player = colour
+        self.last_move = self.stack[-2][0] if len(self.stack) >= 2 else None
+        self.last2_move = self.stack[-3][0] if len(self.stack) >= 3 else None
+        if len(captured) > 0:
+            for capture in captured:
+                self.board[capture[1]] = opponent(colour)
+                self.board[capture[2]] = opponent(colour)
+                if colour == BLACK:
+                    self.black_captures -= 2
+                elif colour == WHITE:
+                    self.white_captures -= 2
+
+        self.board[point] = EMPTY
     
     def neighbors_of_color(self, point: GO_POINT, color: GO_COLOR) -> List:
         """ List of neighbors of point of given color """
@@ -517,37 +543,52 @@ class GoBoard(object):
         """
         immediate_win_moves = []
         if colour == WHITE:
-            for row in self.rows:
-                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_immediate_win_white, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    immediate_win_moves.append(row[start_pos + IMMEDIATE_WIN_WHITE_EMPTY_OFFSET[pattern_index][0]])
-            for col in self.cols:
-                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_immediate_win_white, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    immediate_win_moves.append(col[start_pos + IMMEDIATE_WIN_WHITE_EMPTY_OFFSET[pattern_index][0]])
-            for diag in self.diags:
-                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_immediate_win_white, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    immediate_win_moves.append(diag[start_pos + IMMEDIATE_WIN_WHITE_EMPTY_OFFSET[pattern_index][0]])
+            return self.pattern_search(IMMEDIATE_WIN_WHITE, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
         elif colour == BLACK:
-            for row in self.rows:
-                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_immediate_win_black, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    immediate_win_moves.append(row[start_pos + IMMEDIATE_WIN_BLACK_EMPTY_OFFSET[pattern_index][0]])
-            for col in self.cols:
-                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_immediate_win_black, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    immediate_win_moves.append(col[start_pos + IMMEDIATE_WIN_BLACK_EMPTY_OFFSET[pattern_index][0]])
-            for diag in self.diags:
-                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_immediate_win_black, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    immediate_win_moves.append(diag[start_pos + IMMEDIATE_WIN_BLACK_EMPTY_OFFSET[pattern_index][0]])
+            return self.pattern_search(IMMEDIATE_WIN_BLACK, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
         return immediate_win_moves
 
     def block_opponent_win_search(self, colour):
+        # Block immediate 4 in a row
         opponent_colour = opponent(colour)
         opponent_win_moves = self.immediate_win_search(opponent_colour)
-        return opponent_win_moves
+        block_moves = [] + opponent_win_moves
+
+        # Block 4 in a row by capturing stones
+        capturing_moves = self.capture_search(colour)
+
+        for capture in capturing_moves:
+            self.play_move(capture, colour)
+            new_opponent_win = self.immediate_win_search(opponent_colour)
+            if len(opponent_win_moves) > len(new_opponent_win):
+                block_moves.append(capture)
+            self.undo_last_move()
+
+        return block_moves
+
+    def trie_search(self, text, pattern, offset):
+        dict_key = tuple(tuple(inner_list) for inner_list in pattern)
+        if dict_key not in TrieDictionary:
+            TrieDictionary[dict_key] = build_ac_trie(pattern)
+
+        return aho_corasick_search(text, TrieDictionary[dict_key], offset)
+
+    def pattern_search(self, patterns, offsets):
+        capture_moves = []
+        for row in self.rows + self.cols + self.diags:
+            pattern_index, start_pos = self.trie_search(self.board[row], patterns, offsets)
+            if pattern_index != -1:
+                for index in WHITE_CAPTURE_EMPTY_OFFSET[pattern_index]:
+                    capture_moves.append(row[start_pos + WHITE_CAPTURE_EMPTY_OFFSET[pattern_index][index]])
+        return capture_moves
+
+    def intersection_pattern_search(self, patterns_one, patterns_two, intersections):
+        blocks_one = set(self.pattern_search(patterns_one, intersections))
+        blocks_two = set(self.pattern_search(patterns_two, intersections))
+
+        if blocks_one.intersection(blocks_two):
+            return blocks_one.intersection
+
 
     def open_four_search(self, colour):
         open_four_moves = []
