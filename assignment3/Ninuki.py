@@ -12,6 +12,7 @@ from board import GoBoard
 from board_util import GoBoardUtil
 from engine import GoEngine
 
+NUMBER_OF_SIMULATIONS_PER_MOVE = 10
 
 class Ninuki(GoEngine):
     def __init__(self) -> None:
@@ -53,7 +54,7 @@ class Ninuki(GoEngine):
 
             As in assignment 1, your player should resign or pass only when the game is over.
         """
-        num_simulations = 10
+        num_simulations = NUMBER_OF_SIMULATIONS_PER_MOVE
         # get list of all legal moves
         legal_moves = GoBoardUtil.generate_legal_moves(board, color)
         # initialize a dictionary to store the win percentage for each legal move
@@ -95,6 +96,7 @@ class Ninuki(GoEngine):
         # print(win_percentage)
         # print("\n\n\n")
         return max(win_percentage, key=win_percentage.get)
+
 
     def _rule_based(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
         """

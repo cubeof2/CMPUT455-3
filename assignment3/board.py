@@ -134,15 +134,8 @@ OPEN_FOUR_BLACK = [[EMPTY, BLACK, BLACK, BLACK, EMPTY, EMPTY],
                    [EMPTY, EMPTY, BLACK, BLACK, BLACK, EMPTY]]
 OPEN_FOUR_BLACK_EMPTY_OFFSET = [[4], [3], [2], [1]]
 
-# Build the Aho-Corasick Trie only once
-ac_trie_immediate_win_white = build_ac_trie(IMMEDIATE_WIN_WHITE)
-ac_trie_immediate_win_black = build_ac_trie(IMMEDIATE_WIN_BLACK)
+TrieDictionary = dict()
 
-ac_trie_white_capture = build_ac_trie(WHITE_CAPTURE)
-ac_trie_black_capture = build_ac_trie(BLACK_CAPTURE)
-
-ac_trie_white_open_four = build_ac_trie(OPEN_FOUR_WHITE)
-ac_trie_black_open_four = build_ac_trie(OPEN_FOUR_BLACK)
 
 
 class GoBoard(object):
@@ -593,59 +586,16 @@ class GoBoard(object):
     def open_four_search(self, colour):
         open_four_moves = []
         if colour == WHITE:
-            for row in self.rows:
-                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_white_open_four, OPEN_FOUR__WHITE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    open_four_moves.append(row[start_pos + OPEN_FOUR__WHITE_EMPTY_OFFSET[pattern_index][0]])
-            for col in self.cols:
-                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_white_open_four, OPEN_FOUR__WHITE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    open_four_moves.append(col[start_pos + OPEN_FOUR__WHITE_EMPTY_OFFSET[pattern_index][0]])
-            for diag in self.diags:
-                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_white_open_four, OPEN_FOUR__WHITE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    open_four_moves.append(diag[start_pos + OPEN_FOUR__WHITE_EMPTY_OFFSET[pattern_index][0]])
+            return self.pattern_search(OPEN_FOUR_WHITE, OPEN_FOUR__WHITE_EMPTY_OFFSET)
         elif colour == BLACK:
-            for row in self.rows:
-                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_black_open_four, OPEN_FOUR_BLACK_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    open_four_moves.append(row[start_pos + OPEN_FOUR_BLACK_EMPTY_OFFSET[pattern_index][0]])
-            for col in self.cols:
-                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_black_open_four, OPEN_FOUR_BLACK_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    open_four_moves.append(col[start_pos + OPEN_FOUR_BLACK_EMPTY_OFFSET[pattern_index][0]])
-            for diag in self.diags:
-                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_black_open_four, OPEN_FOUR_BLACK_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    open_four_moves.append(diag[start_pos + OPEN_FOUR_BLACK_EMPTY_OFFSET[pattern_index][0]])
+            return self.pattern_search(OPEN_FOUR_BLACK, OPEN_FOUR_BLACK_EMPTY_OFFSET)
         return open_four_moves
+
     def capture_search(self, colour):
         capture_moves = []
         if colour == WHITE:
-            for row in self.rows:
-                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_white_capture, WHITE_CAPTURE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    capture_moves.append(row[start_pos + WHITE_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
-            for col in self.cols:
-                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_white_capture, WHITE_CAPTURE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    capture_moves.append(col[start_pos + WHITE_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
-            for diag in self.diags:
-                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_white_capture, WHITE_CAPTURE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    capture_moves.append(diag[start_pos + WHITE_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+            return self.pattern_search(WHITE_CAPTURE, WHITE_CAPTURE_EMPTY_OFFSET)
         elif colour == BLACK:
-            for row in self.rows:
-                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_black_capture, BLACK_CAPTURE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    capture_moves.append(row[start_pos + BLACK_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
-            for col in self.cols:
-                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_black_capture, BLACK_CAPTURE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    capture_moves.append(col[start_pos + BLACK_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
-            for diag in self.diags:
-                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_black_capture, BLACK_CAPTURE_EMPTY_OFFSET)
-                if pattern_index != -1:
-                    capture_moves.append(diag[start_pos + BLACK_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+            return self.pattern_search(BLACK_CAPTURE, WHITE_CAPTURE_EMPTY_OFFSET)
         return capture_moves
 
