@@ -104,49 +104,45 @@ def aho_corasick_search(text_array, ac_trie, patterns):
 
 
 # Define patterns and the offsets in order to retrieve the empty square later on.
-WHITE_THREATS_NO_CAPTURE = [[WHITE, WHITE, WHITE, WHITE, EMPTY], [WHITE, WHITE, WHITE, EMPTY, WHITE],
-                            [WHITE, WHITE, EMPTY, WHITE, WHITE], [WHITE, EMPTY, WHITE, WHITE, WHITE],
-                            [EMPTY, WHITE, WHITE, WHITE, WHITE]]
-WHITE_THREATS_NO_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0]]
+IMMEDIATE_WIN_WHITE = [[WHITE, WHITE, WHITE, WHITE, EMPTY], [WHITE, WHITE, WHITE, EMPTY, WHITE],
+                       [WHITE, WHITE, EMPTY, WHITE, WHITE], [WHITE, EMPTY, WHITE, WHITE, WHITE],
+                       [EMPTY, WHITE, WHITE, WHITE, WHITE]]
+IMMEDIATE_WIN_WHITE_EMPTY_OFFSET = [[4], [3], [2], [1], [0]]
 
-BLACK_THREATS_NO_CAPTURE = [[BLACK, BLACK, BLACK, BLACK, EMPTY], [BLACK, BLACK, BLACK, EMPTY, BLACK],
-                            [BLACK, BLACK, EMPTY, BLACK, BLACK], [BLACK, EMPTY, BLACK, BLACK, BLACK],
-                            [EMPTY, BLACK, BLACK, BLACK, BLACK]]
-BLACK_THREATS_NO_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0]]
+IMMEDIATE_WIN_BLACK = [[BLACK, BLACK, BLACK, BLACK, EMPTY], [BLACK, BLACK, BLACK, EMPTY, BLACK],
+                       [BLACK, BLACK, EMPTY, BLACK, BLACK], [BLACK, EMPTY, BLACK, BLACK, BLACK],
+                       [EMPTY, BLACK, BLACK, BLACK, BLACK]]
+IMMEDIATE_WIN_BLACK_EMPTY_OFFSET = [[4], [3], [2], [1], [0]]
 
-WHITE_THREATS_WITH_CAPTURE = [[WHITE, WHITE, WHITE, WHITE, EMPTY], [WHITE, WHITE, WHITE, EMPTY, WHITE],
-                              [WHITE, WHITE, EMPTY, WHITE, WHITE], [WHITE, EMPTY, WHITE, WHITE, WHITE],
-                              [EMPTY, WHITE, WHITE, WHITE, WHITE], [WHITE, BLACK, BLACK, EMPTY],
-                              [EMPTY, BLACK, BLACK, WHITE]]
-WHITE_THREATS_WITH_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0], [3], [0]]
+WHITE_CAPTURE = [[WHITE, BLACK, BLACK, EMPTY],
+                 [EMPTY, BLACK, BLACK, WHITE]]
+WHITE_CAPTURE_EMPTY_OFFSET = [[3], [0]]
 
-BLACK_THREATS_WITH_CAPTURE = [[BLACK, BLACK, BLACK, BLACK, EMPTY], [BLACK, BLACK, BLACK, EMPTY, BLACK],
-                              [BLACK, BLACK, EMPTY, BLACK, BLACK], [BLACK, EMPTY, BLACK, BLACK, BLACK],
-                              [EMPTY, BLACK, BLACK, BLACK, BLACK], [BLACK, WHITE, WHITE, EMPTY],
-                              [EMPTY, WHITE, WHITE, BLACK]]
-BLACK_THREATS_WITH_CAPTURE_EMPTY_OFFSET = [[4], [3], [2], [1], [0], [3], [0]]
+BLACK_CAPTURE = [[BLACK, WHITE, WHITE, EMPTY],
+                 [EMPTY, WHITE, WHITE, BLACK]]
+BLACK_CAPTURE_EMPTY_OFFSET = [[3], [0]]
 
-WHITE_HEURISTIC_TO_CREATE_THREATS = [[EMPTY, WHITE, WHITE, WHITE, EMPTY, EMPTY],
-                                     [EMPTY, WHITE, WHITE, EMPTY, WHITE, EMPTY],
-                                     [EMPTY, WHITE, EMPTY, WHITE, WHITE, EMPTY],
-                                     [EMPTY, EMPTY, WHITE, WHITE, WHITE, EMPTY]]
-WHITE_HEURISTIC_EMPTY_OFFSET = [[4], [3], [2], [1]]
+OPEN_FOUR_WHITE = [[EMPTY, WHITE, WHITE, WHITE, EMPTY, EMPTY],
+                   [EMPTY, WHITE, WHITE, EMPTY, WHITE, EMPTY],
+                   [EMPTY, WHITE, EMPTY, WHITE, WHITE, EMPTY],
+                   [EMPTY, EMPTY, WHITE, WHITE, WHITE, EMPTY]]
+OPEN_FOUR__WHITE_EMPTY_OFFSET = [[4], [3], [2], [1]]
 
-BLACK_HEURISTIC_TO_CREATE_THREATS = [[EMPTY, BLACK, BLACK, BLACK, EMPTY, EMPTY],
-                                     [EMPTY, BLACK, BLACK, EMPTY, BLACK, EMPTY],
-                                     [EMPTY, BLACK, EMPTY, BLACK, BLACK, EMPTY],
-                                     [EMPTY, EMPTY, BLACK, BLACK, BLACK, EMPTY]]
-BLACK_HEURISTIC_EMPTY_OFFSET = [[4], [3], [2], [1]]
+OPEN_FOUR_BLACK = [[EMPTY, BLACK, BLACK, BLACK, EMPTY, EMPTY],
+                   [EMPTY, BLACK, BLACK, EMPTY, BLACK, EMPTY],
+                   [EMPTY, BLACK, EMPTY, BLACK, BLACK, EMPTY],
+                   [EMPTY, EMPTY, BLACK, BLACK, BLACK, EMPTY]]
+OPEN_FOUR_BLACK_EMPTY_OFFSET = [[4], [3], [2], [1]]
 
 # Build the Aho-Corasick Trie only once
-ac_trie_white_no_capture = build_ac_trie(WHITE_THREATS_NO_CAPTURE)
-ac_trie_black_no_capture = build_ac_trie(BLACK_THREATS_NO_CAPTURE)
+ac_trie_immediate_win_white = build_ac_trie(IMMEDIATE_WIN_WHITE)
+ac_trie_immediate_win_black = build_ac_trie(IMMEDIATE_WIN_BLACK)
 
-ac_trie_white_with_capture = build_ac_trie(WHITE_THREATS_WITH_CAPTURE)
-ac_trie_black_with_capture = build_ac_trie(BLACK_THREATS_WITH_CAPTURE)
+ac_trie_white_capture = build_ac_trie(WHITE_CAPTURE)
+ac_trie_black_capture = build_ac_trie(BLACK_CAPTURE)
 
-ac_trie_white_heuristic = build_ac_trie(WHITE_HEURISTIC_TO_CREATE_THREATS)
-ac_trie_black_heuristic = build_ac_trie(BLACK_HEURISTIC_TO_CREATE_THREATS)
+ac_trie_white_open_four = build_ac_trie(OPEN_FOUR_WHITE)
+ac_trie_black_open_four = build_ac_trie(OPEN_FOUR_BLACK)
 
 
 class GoBoard(object):
@@ -514,4 +510,101 @@ class GoBoard(object):
             if counter == 5 and prev != EMPTY:
                 return prev
         return EMPTY
+
+    def immediate_win_search(self, colour):
+        """
+        Search for immediate win for colour
+        """
+        immediate_win_moves = []
+        if colour == WHITE:
+            for row in self.rows:
+                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_immediate_win_white, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    immediate_win_moves.append(row[start_pos + IMMEDIATE_WIN_WHITE_EMPTY_OFFSET[pattern_index][0]])
+            for col in self.cols:
+                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_immediate_win_white, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    immediate_win_moves.append(col[start_pos + IMMEDIATE_WIN_WHITE_EMPTY_OFFSET[pattern_index][0]])
+            for diag in self.diags:
+                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_immediate_win_white, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    immediate_win_moves.append(diag[start_pos + IMMEDIATE_WIN_WHITE_EMPTY_OFFSET[pattern_index][0]])
+        elif colour == BLACK:
+            for row in self.rows:
+                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_immediate_win_black, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    immediate_win_moves.append(row[start_pos + IMMEDIATE_WIN_BLACK_EMPTY_OFFSET[pattern_index][0]])
+            for col in self.cols:
+                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_immediate_win_black, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    immediate_win_moves.append(col[start_pos + IMMEDIATE_WIN_BLACK_EMPTY_OFFSET[pattern_index][0]])
+            for diag in self.diags:
+                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_immediate_win_black, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    immediate_win_moves.append(diag[start_pos + IMMEDIATE_WIN_BLACK_EMPTY_OFFSET[pattern_index][0]])
+        return immediate_win_moves
+
+    def block_opponent_win_search(self, colour):
+        opponent_colour = opponent(colour)
+        opponent_win_moves = self.immediate_win_search(opponent_colour)
+        return opponent_win_moves
+
+    def open_four_search(self, colour):
+        open_four_moves = []
+        if colour == WHITE:
+            for row in self.rows:
+                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_white_open_four, OPEN_FOUR__WHITE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    open_four_moves.append(row[start_pos + OPEN_FOUR__WHITE_EMPTY_OFFSET[pattern_index][0]])
+            for col in self.cols:
+                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_white_open_four, OPEN_FOUR__WHITE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    open_four_moves.append(col[start_pos + OPEN_FOUR__WHITE_EMPTY_OFFSET[pattern_index][0]])
+            for diag in self.diags:
+                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_white_open_four, OPEN_FOUR__WHITE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    open_four_moves.append(diag[start_pos + OPEN_FOUR__WHITE_EMPTY_OFFSET[pattern_index][0]])
+        elif colour == BLACK:
+            for row in self.rows:
+                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_black_open_four, OPEN_FOUR_BLACK_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    open_four_moves.append(row[start_pos + OPEN_FOUR_BLACK_EMPTY_OFFSET[pattern_index][0]])
+            for col in self.cols:
+                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_black_open_four, OPEN_FOUR_BLACK_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    open_four_moves.append(col[start_pos + OPEN_FOUR_BLACK_EMPTY_OFFSET[pattern_index][0]])
+            for diag in self.diags:
+                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_black_open_four, OPEN_FOUR_BLACK_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    open_four_moves.append(diag[start_pos + OPEN_FOUR_BLACK_EMPTY_OFFSET[pattern_index][0]])
+        return open_four_moves
+    def capture_search(self, colour):
+        capture_moves = []
+        if colour == WHITE:
+            for row in self.rows:
+                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_white_capture, WHITE_CAPTURE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    capture_moves.append(row[start_pos + WHITE_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+            for col in self.cols:
+                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_white_capture, WHITE_CAPTURE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    capture_moves.append(col[start_pos + WHITE_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+            for diag in self.diags:
+                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_white_capture, WHITE_CAPTURE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    capture_moves.append(diag[start_pos + WHITE_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+        elif colour == BLACK:
+            for row in self.rows:
+                pattern_index, start_pos = aho_corasick_search(self.board[row], ac_trie_black_capture, BLACK_CAPTURE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    capture_moves.append(row[start_pos + BLACK_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+            for col in self.cols:
+                pattern_index, start_pos = aho_corasick_search(self.board[col], ac_trie_black_capture, BLACK_CAPTURE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    capture_moves.append(col[start_pos + BLACK_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+            for diag in self.diags:
+                pattern_index, start_pos = aho_corasick_search(self.board[diag], ac_trie_black_capture, BLACK_CAPTURE_EMPTY_OFFSET)
+                if pattern_index != -1:
+                    capture_moves.append(diag[start_pos + BLACK_CAPTURE_EMPTY_OFFSET[pattern_index][0]])
+        return capture_moves
 
