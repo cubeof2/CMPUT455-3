@@ -79,7 +79,7 @@ class Ninuki(GoEngine):
                 # run the simulation
                 # while the game is not over, generate a random move and make it on the board
                 while not sim_board.end_of_game():
-                    MoveType, random_moves = self.generate_policy_moves(sim_board, sim_board.current_player)
+                    scenario, random_moves = self.generate_policy_moves(sim_board, sim_board.current_player)
                     random_move = random_moves[0]
                     # print(f"random move is {random_move}, played by {sim_board.current_player}\n")
                     if random_move == PASS:
@@ -106,23 +106,22 @@ class Ninuki(GoEngine):
             3. Create an open four
             4. Capture opponent's 2 or more stones
             5. Random move
-        TODO: aho corasick for pattern recognition, as we are checking for more patterns compared to last assignment.
         """
-        ImmediateWin = board.immediate_win_search(color)
-        if len(ImmediateWin) > 0:
-            return "Win", ImmediateWin
+        immediate_win = board.immediate_win_search(color)
+        if len(immediate_win) > 0:
+            return "Win", immediate_win
         
-        BlockWin = board.block_opponent_win_search(color)
-        if len(BlockWin) > 0:
-            return "BlockWin", BlockWin
+        block_win = board.block_opponent_win_search(color)
+        if len(block_win) > 0:
+            return "BlockWin", block_win
         
-        OpenFour = board.open_four_search(color)
-        if len(OpenFour) > 0:
-            return "OpenFour", OpenFour
+        open_four = board.open_four_search(color)
+        if len(open_four) > 0:
+            return "OpenFour", open_four
         
-        Capture = board.capture_search(color)
-        if len(Capture) > 0:
-            return "Capture", Capture
+        capture = board.capture_search(color)
+        if len(capture) > 0:
+            return "Capture", capture
         
         return "Random", GoBoardUtil.generate_legal_moves(board, color)
 
@@ -132,12 +131,16 @@ class Ninuki(GoEngine):
         Generate a list of moves based on the policy type
         """
         if self.get_policy() == "random":
-            Rules = GoBoardUtil.generate_legal_moves(board, colour)
-            return "Random", Rules if len(Rules) != 0 else [PASS]
+            available_moves = GoBoardUtil.generate_legal_moves(board, colour)
+            if len(available_moves) == 0:  # No legal moves on the board
+                return "Random", [PASS]
+            return "Random", available_moves
 
         elif self.get_policy() == "rule_based":
-            MoveType, Rules = self._rule_based(board, colour)
-            return MoveType, Rules if len(Rules) != 0 else [PASS]
+            scenario, available_moves = self._rule_based(board, colour)
+            if len(available_moves) == 0:
+                return "Random", [PASS]
+            return scenario, available_moves
 
 
 

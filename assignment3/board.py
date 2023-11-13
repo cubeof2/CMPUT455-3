@@ -84,12 +84,12 @@ def build_ac_trie(patterns):
     return root
 
 
-def aho_corasick_search(text_array, ac_trie, patterns):
+def aho_corasick_search(pos_array, ac_trie, patterns):
     current_node = ac_trie
     i = 0
     output = []
 
-    for num in text_array:
+    for num in pos_array:
         while num not in current_node.children and current_node.fail:
             current_node = current_node.fail
         if num in current_node.children:
@@ -137,8 +137,22 @@ OPEN_FOUR_BLACK = [[EMPTY, BLACK, BLACK, BLACK, EMPTY, EMPTY],
                    [EMPTY, EMPTY, BLACK, BLACK, BLACK, EMPTY]]
 OPEN_FOUR_BLACK_EMPTY_OFFSET = [[4], [3], [2], [1]]
 
-TrieDictionary = dict()
+"""trie_dictionary = dict()
+trie_dictionary["IMMEDIATE_WIN_WHITE"] = (IMMEDIATE_WIN_WHITE, build_ac_trie(IMMEDIATE_WIN_WHITE), IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
+trie_dictionary["IMMEDIATE_WIN_BLACK"] = (IMMEDIATE_WIN_BLACK, build_ac_trie(IMMEDIATE_WIN_BLACK), IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
+trie_dictionary["WHITE_CAPTURE"] = (WHITE_CAPTURE, build_ac_trie(WHITE_CAPTURE), WHITE_CAPTURE_EMPTY_OFFSET)
+trie_dictionary["BLACK_CAPTURE"] = (BLACK_CAPTURE, build_ac_trie(BLACK_CAPTURE), BLACK_CAPTURE_EMPTY_OFFSET)
+trie_dictionary["OPEN_FOUR_WHITE"] = (OPEN_FOUR_WHITE, build_ac_trie(OPEN_FOUR_WHITE), OPEN_FOUR_WHITE_EMPTY_OFFSET)
+trie_dictionary["OPEN_FOUR_BLACK"] = (OPEN_FOUR_BLACK, build_ac_trie(OPEN_FOUR_BLACK), OPEN_FOUR_BLACK_EMPTY_OFFSET)
+"""
 
+
+immediate_win_white_trie = build_ac_trie(IMMEDIATE_WIN_WHITE)
+immediate_win_black_trie = build_ac_trie(IMMEDIATE_WIN_BLACK)
+white_capture_trie = build_ac_trie(WHITE_CAPTURE)
+black_capture_trie = build_ac_trie(BLACK_CAPTURE)
+open_four_white_trie = build_ac_trie(OPEN_FOUR_WHITE)
+open_four_black_trie = build_ac_trie(OPEN_FOUR_BLACK)
 
 
 class GoBoard(object):
@@ -152,6 +166,7 @@ class GoBoard(object):
         self.black_captures = 0
         self.white_captures = 0
         self.stack = []
+
     def add_two_captures(self, color: GO_COLOR) -> None:
         if color == BLACK:
             self.black_captures += 2
@@ -541,15 +556,13 @@ class GoBoard(object):
         """
         immediate_win_moves = []
         if colour == WHITE:
+            immediate_win_moves += self.pattern_search(IMMEDIATE_WIN_WHITE, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET, immediate_win_white_trie)
             if self.white_captures >= 8:
-                return self.pattern_search(IMMEDIATE_WIN_WHITE + WHITE_CAPTURE, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET + WHITE_CAPTURE_EMPTY_OFFSET)
-            else:
-                return self.pattern_search(IMMEDIATE_WIN_WHITE, IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
+                immediate_win_moves += self.pattern_search(WHITE_CAPTURE, WHITE_CAPTURE_EMPTY_OFFSET, white_capture_trie)
         elif colour == BLACK:
+            immediate_win_moves += self.pattern_search(IMMEDIATE_WIN_BLACK, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET, immediate_win_black_trie)
             if self.black_captures >= 8:
-                return self.pattern_search(IMMEDIATE_WIN_BLACK + BLACK_CAPTURE, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET + BLACK_CAPTURE_EMPTY_OFFSET)
-            else:
-                return self.pattern_search(IMMEDIATE_WIN_BLACK, IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
+                immediate_win_moves += self.pattern_search(BLACK_CAPTURE, BLACK_CAPTURE_EMPTY_OFFSET, black_capture_trie)
         return immediate_win_moves
 
     def block_opponent_win_search(self, colour):
@@ -570,36 +583,29 @@ class GoBoard(object):
 
         return list(set(block_moves + opponent_win_moves))
 
-    def trie_search(self, text, pattern):
-        dict_key = tuple(tuple(inner_list) for inner_list in pattern)
-        if dict_key not in TrieDictionary:
-            TrieDictionary[dict_key] = build_ac_trie(pattern)
-
-        return aho_corasick_search(text, TrieDictionary[dict_key], pattern)
-
-    def pattern_search(self, patterns, offsets):
+    def pattern_search(self, patterns, offsets, trie):
         capture_moves = []
-        for row in self.rows + self.cols + self.diags:
-            search_output = self.trie_search(self.board[row], patterns)
+        for pos_array in self.rows + self.cols + self.diags:
+            search_output = aho_corasick_search(self.board[pos_array], trie, patterns)
             for search_result in search_output:
                 if search_result[0] != -1:
                     for index in offsets[search_result[0]]:
-                        capture_moves.append(row[search_result[1] + index])
+                        capture_moves.append(pos_array[search_result[1] + index])
         return capture_moves
 
     def open_four_search(self, colour):
         open_four_moves = []
         if colour == WHITE:
-            return self.pattern_search(OPEN_FOUR_WHITE, OPEN_FOUR_WHITE_EMPTY_OFFSET)
+            return self.pattern_search(OPEN_FOUR_WHITE, OPEN_FOUR_WHITE_EMPTY_OFFSET, open_four_white_trie)
         elif colour == BLACK:
-            return self.pattern_search(OPEN_FOUR_BLACK, OPEN_FOUR_BLACK_EMPTY_OFFSET)
+            return self.pattern_search(OPEN_FOUR_BLACK, OPEN_FOUR_BLACK_EMPTY_OFFSET, open_four_black_trie)
         return open_four_moves
 
     def capture_search(self, colour):
         capture_moves = []
         if colour == WHITE:
-            return self.pattern_search(WHITE_CAPTURE, WHITE_CAPTURE_EMPTY_OFFSET)
+            return self.pattern_search(WHITE_CAPTURE, WHITE_CAPTURE_EMPTY_OFFSET, white_capture_trie)
         elif colour == BLACK:
-            return self.pattern_search(BLACK_CAPTURE, WHITE_CAPTURE_EMPTY_OFFSET)
+            return self.pattern_search(BLACK_CAPTURE, WHITE_CAPTURE_EMPTY_OFFSET, black_capture_trie)
         return capture_moves
 
