@@ -137,6 +137,10 @@ OPEN_FOUR_BLACK = [[EMPTY, BLACK, BLACK, BLACK, EMPTY, EMPTY],
                    [EMPTY, EMPTY, BLACK, BLACK, BLACK, EMPTY]]
 OPEN_FOUR_BLACK_EMPTY_OFFSET = [[4], [3], [2], [1]]
 
+FIVE_IN_A_ROW = [[BLACK, BLACK, BLACK, BLACK, BLACK], [WHITE, WHITE, WHITE, WHITE, WHITE]]
+FIVE_IN_A_ROW_OFFSET = [[1], [1]]  # second element in the 5 in a row to be sure
+
+
 """trie_dictionary = dict()
 trie_dictionary["IMMEDIATE_WIN_WHITE"] = (IMMEDIATE_WIN_WHITE, build_ac_trie(IMMEDIATE_WIN_WHITE), IMMEDIATE_WIN_WHITE_EMPTY_OFFSET)
 trie_dictionary["IMMEDIATE_WIN_BLACK"] = (IMMEDIATE_WIN_BLACK, build_ac_trie(IMMEDIATE_WIN_BLACK), IMMEDIATE_WIN_BLACK_EMPTY_OFFSET)
@@ -153,6 +157,7 @@ white_capture_trie = build_ac_trie(WHITE_CAPTURE)
 black_capture_trie = build_ac_trie(BLACK_CAPTURE)
 open_four_white_trie = build_ac_trie(OPEN_FOUR_WHITE)
 open_four_black_trie = build_ac_trie(OPEN_FOUR_BLACK)
+black_five_trie = build_ac_trie(FIVE_IN_A_ROW)
 
 
 class GoBoard(object):
@@ -312,10 +317,9 @@ class GoBoard(object):
 
         if point == PASS:
             return True
-        can_play_move = self.play_move(point, color)
-        if can_play_move:
-            self.undo_last_move()
-        return can_play_move
+        if self.board[point] != EMPTY:
+            return False
+        return True
 
     def end_of_game(self) -> int:
         """ check if the game is over AFTER a move has been made
@@ -525,7 +529,7 @@ class GoBoard(object):
         Returns BLACK or WHITE if any five in a row is detected for the color
         EMPTY otherwise.
         """
-        for r in self.rows:
+        """for r in self.rows:
             result = self.has_five_in_list(r)
             if result != EMPTY:
                 return result
@@ -537,7 +541,13 @@ class GoBoard(object):
             result = self.has_five_in_list(d)
             if result != EMPTY:
                 return result
-        return EMPTY
+        return EMPTY"""
+        five_in_a_row = self.pattern_search(FIVE_IN_A_ROW, FIVE_IN_A_ROW_OFFSET, black_five_trie)
+
+        if len(five_in_a_row) > 0:
+            return BLACK
+        else:
+            return EMPTY
 
     def has_five_in_list(self, list) -> GO_COLOR:
         """
