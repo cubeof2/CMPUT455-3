@@ -11,6 +11,7 @@ from board_base import DEFAULT_SIZE, GO_POINT, GO_COLOR, PASS, BLACK, WHITE
 from board import GoBoard
 from board_util import GoBoardUtil
 from engine import GoEngine
+import random
 
 NUMBER_OF_SIMULATIONS_PER_MOVE = 10
 
@@ -79,7 +80,8 @@ class Ninuki(GoEngine):
                 # run the simulation
                 # while the game is not over, generate a random move and make it on the board
                 while not sim_board.end_of_game():
-                    scenario, random_moves = self.generate_policy_moves(sim_board, sim_board.current_player)
+                    _, random_moves = self.generate_policy_moves(sim_board, sim_board.current_player)
+                    random.shuffle(random_moves)
                     random_move = random_moves[0]
                     # print(f"random move is {random_move}, played by {sim_board.current_player}\n")
                     if random_move == PASS:
