@@ -21,5 +21,5 @@ class GoEngine:
         pass
 
     def set_policy(self, policy_type: str) -> None:
-        pass
+        self._policy_type = policy_type
         
