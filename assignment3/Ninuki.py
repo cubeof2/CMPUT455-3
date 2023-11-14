@@ -16,14 +16,14 @@ import random
 NUMBER_OF_SIMULATIONS_PER_MOVE = 10
 
 class Ninuki(GoEngine):
-    def __init__(self) -> None:
+    def __init__(self):
         """
         Ninuki player
         """
         self._policy_type = "random"
         GoEngine.__init__(self, "Ninuki", 1.0)
 
-    def set_policy(self, policy_type: str) -> None:
+    def set_policy(self, policy_type: str):
         """
         Set the policy type
         """
@@ -35,10 +35,10 @@ class Ninuki(GoEngine):
         """
         return self._policy_type
 
-    def get_move(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
+    def get_move(self, board: GoBoard, color: GO_COLOR):
         return self._random_simulation(board, color)
 
-    def _random_simulation(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
+    def _random_simulation(self, board: GoBoard, color: GO_COLOR):
         """
         Returns a move for a random simulation player
             Part 1: simulation-based ninuki player
@@ -155,7 +155,7 @@ class Ninuki(GoEngine):
         return max(win_percentage, key=win_percentage.get)
 
 
-    def _rule_based(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
+    def _rule_based(self, board: GoBoard, color: GO_COLOR):
         """
         Returns a move for a rule-based ninuki player
         Rules in order of priority:
@@ -184,7 +184,7 @@ class Ninuki(GoEngine):
         return "Random", GoBoardUtil.generate_legal_moves(board, color)
 
 
-    def generate_policy_moves(self, board: GoBoard, colour: GO_COLOR) -> list[GO_POINT]:
+    def generate_policy_moves(self, board: GoBoard, colour: GO_COLOR):
         """
         Generate a list of moves based on the policy type
         """
@@ -202,7 +202,7 @@ class Ninuki(GoEngine):
 
 
 
-def run() -> None:
+def run():
     """
     start the gtp connection and wait for commands.
     """
