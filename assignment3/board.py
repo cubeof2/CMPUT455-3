@@ -581,17 +581,27 @@ class GoBoard(object):
                 block_moves.append(capture)
             self.undo_last_move()
 
+        # Prevent opponent from capturing 10 stones
+        if colour == WHITE:
+            opp_captures = self.black_captures
+        elif colour == BLACK:
+            opp_captures = self.white_captures
+        if opp_captures >= 8:
+            opp_capture_moves = self.capture_search(opponent_colour)
+            if len(opp_capture_moves) > 0:
+                block_moves += opp_capture_moves
+
         return list(set(block_moves + opponent_win_moves))
 
     def pattern_search(self, patterns, offsets, trie):
-        capture_moves = []
+        moves = []
         for pos_array in self.rows + self.cols + self.diags:
             search_output = aho_corasick_search(self.board[pos_array], trie, patterns)
             for search_result in search_output:
                 if search_result[0] != -1:
                     for index in offsets[search_result[0]]:
-                        capture_moves.append(pos_array[search_result[1] + index])
-        return capture_moves
+                        moves.append(pos_array[search_result[1] + index])
+        return moves
 
     def open_four_search(self, colour):
         open_four_moves = []
