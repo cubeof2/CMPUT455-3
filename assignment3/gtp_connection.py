@@ -70,7 +70,8 @@ class GtpConnection:
             "timelimit": self.timelimit_cmd,
             "solve": self.solve_cmd,
             "policy": self.policytype_cmd,
-            "policy_moves": self.policy_moves_cmd
+            "policy_moves": self.policy_moves_cmd,
+            "undo": self.undo_cmd
         }
 
         # argmap is used for argument checking
@@ -419,7 +420,11 @@ class GtpConnection:
         Coords = [format_point(point_to_coord(i, self.board.size)) for i in moves]
         self.respond(Movetype+" "+" ".join(sorted(Coords)).lower())
 
-
+    def undo_cmd(self, args: List[str]) -> None:
+        self.board.undo_last_move()
+        print(self.board.stack)
+        print(self.board.current_player)
+        self.respond()
     """
     ==========================================================================
     Assignment 1 - game-specific commands end here

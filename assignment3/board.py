@@ -304,10 +304,17 @@ class GoBoard(object):
         This method tries to play the move on a temporary copy of the board.
         This prevents the board from being modified by the move
         """
-        if point == PASS:
+        """if point == PASS:
             return True
         board_copy: GoBoard = self.copy()
         can_play_move = board_copy.play_move(point, color)
+        return can_play_move"""
+
+        if point == PASS:
+            return True
+        can_play_move = self.play_move(point, color)
+        if can_play_move:
+            self.undo_last_move()
         return can_play_move
 
     def end_of_game(self) -> int:
@@ -459,7 +466,6 @@ class GoBoard(object):
                     self.black_captures += 2
                 else:
                     self.white_captures += 2
-
         self.stack.append((point, color, captured))
         return True
 
