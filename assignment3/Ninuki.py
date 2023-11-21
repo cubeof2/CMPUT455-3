@@ -53,6 +53,7 @@ class Ninuki(GoEngine):
             As in assignment 1, your player should resign or pass only when the game is over.
         """
 
+
         num_simulations = NUMBER_OF_SIMULATIONS_PER_MOVE
         # get list of all legal moves
         _, legal_moves = self.generate_policy_moves(board, color)

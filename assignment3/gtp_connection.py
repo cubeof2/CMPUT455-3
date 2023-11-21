@@ -387,6 +387,12 @@ class GtpConnection:
 
         # check for end of game here (better yet, link to a function that does that)
         # otherwise query the engine for a move
+        if self.board.end_of_game() == color:
+            self.respond("pass")
+            return
+        elif self.board.end_of_game() == opponent(color):
+            self.respond("resign")
+            return
 
         move = self.ninuki_engine.get_move(self.board, color)
         move_coord = point_to_coord(move, self.board.size)

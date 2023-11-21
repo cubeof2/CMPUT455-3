@@ -545,7 +545,10 @@ class GoBoard(object):
         five_in_a_row = self.pattern_search(FIVE_IN_A_ROW, FIVE_IN_A_ROW_OFFSET, black_five_trie)
 
         if len(five_in_a_row) > 0:
-            return BLACK
+            if self.board[five_in_a_row[0]] == BLACK:
+                return BLACK
+            elif self.board[five_in_a_row[0]] == WHITE:
+                return WHITE
         else:
             return EMPTY
 
